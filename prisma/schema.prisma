@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(VIEWER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+model Employee {
+  id            String      @id @default(cuid())
+  name          String
+  email         String      @unique
+  department    String
+  position      String
+  dateOfJoining DateTime
+  status        EmployeeStatus @default(ACTIVE)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  activityLogs  ActivityLog[]
+
+  @@map("employees")
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  employeeId  String
+  action      String   // CREATED, UPDATED, STATUS_CHANGED, DELETED, IMPORTED
+  details     Json     // Store change details as JSON
+  actorUserId String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  actor       User?    @relation(fields: [actorUserId], references: [id])
+
+  @@map("activity_logs")
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+enum Role {
+  ADMIN
+  HR
+  VIEWER
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  RESIGNED
+}
